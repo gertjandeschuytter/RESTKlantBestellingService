@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BusinessLayer_KlantBestelling\BusinessLayer_KlantBestelling.csproj" />
+    <ProjectReference Include="..\DataLayer_KlantBestelling\DataLayer_KlantBestelling.csproj" />
+  </ItemGroup>
+
+</Project>
