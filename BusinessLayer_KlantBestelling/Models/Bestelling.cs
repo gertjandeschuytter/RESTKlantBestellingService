@@ -25,12 +25,10 @@ namespace BusinessLayer_KlantBestelling {
         public int Aantal { get; private set; }
         public Product Product { get; private set; }
 
-
-        public void ZetId(int BestellingId) {
-            if (BestellingId <= 0) {
-                throw new BestellingException("Het ID is ongeldig. Het moet 1 of meer zijn.");
-            }
-            this.BestellingId = BestellingId;
+        public void ZetId(int id)
+        {
+            if (id <= 0) throw new BestellingException("ID is 0 of lager");
+            this.BestellingId = id;
         }
         public void ZetProduct(int product) {
             if (!Enum.IsDefined(typeof(Product), (Product)product)) {
@@ -39,8 +37,8 @@ namespace BusinessLayer_KlantBestelling {
             this.Product = (Product)product;
         }
         public void ZetAantal(int aantal) {
-            if (aantal <= 1) {
-                throw new BestellingException("Het aantal moet steeds groter zijn dan 1.");
+            if (aantal < 1) {
+                throw new BestellingException("Het aantal moet steeds groter zijn dan 0.");
             }
             Aantal = aantal;
         }
