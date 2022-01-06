@@ -14,7 +14,7 @@ namespace API_KlantBestelling.Controllers {
     [Route("api/klant")]
     [ApiController]
     public class KlantBestellingController : ControllerBase {
-        private string url = "http://localhost:44328";
+        private string url = "https://localhost:44328/api";
         private BestellingService _bestellingService;
         private KlantService _klantService;
 
@@ -35,9 +35,9 @@ namespace API_KlantBestelling.Controllers {
         }
         //POST Klant
         [HttpPost]
-        public ActionResult<KlantRESTOutputDTO> PostKlant([FromBody] KlantRESTInputDTOPOST restdto) {
+        public ActionResult<KlantRESTOutputDTO> PostKlant([FromBody] KlantRESTInputDTO restdto) {
             try {
-                Klant klant = _klantService.KlantToevoegen(MapToDomain.MapToKlantDomainPOST(restdto));
+                Klant klant = _klantService.KlantToevoegen(MapToDomain.MapToKlantDomain(restdto));
                 return CreatedAtAction(nameof(GetKlant), new { KlantId = klant.KlantId }, MapFromDomain.MapFromKlantDomain(url, klant, _bestellingService));
             } catch (Exception ex) {
                 return BadRequest(ex.Message);
@@ -55,13 +55,13 @@ namespace API_KlantBestelling.Controllers {
         }
         //PUT Klant
         [HttpPut("{KlantId}")]
-        public ActionResult<KlantRESTOutputDTO> PutKlant(int KlantId, [FromBody] KlantRESTInputDTOPUT klantRESTInputDTO) {
+        public ActionResult<KlantRESTOutputDTO> PutKlant(int KlantId, [FromBody] KlantRESTInputDTO klantRESTInputDTO) {
             try {
                 if (KlantId != klantRESTInputDTO.KlantId) {
                     return BadRequest();
                 }
                 if (_klantService.bestaatKlant(KlantId)) {
-                    Klant klant = _klantService.UpdateKlant(MapToDomain.MapToKlantDomainPUT(klantRESTInputDTO));
+                    Klant klant = _klantService.UpdateKlant(MapToDomain.MapToKlantDomain(klantRESTInputDTO));
                     return CreatedAtAction(nameof(GetKlant), new { KlantId = klantRESTInputDTO.KlantId }, MapFromDomain.MapFromKlantDomain(url, klant, _bestellingService));
                 } else {
                     return BadRequest("Klant bestaat niet");
@@ -91,16 +91,16 @@ namespace API_KlantBestelling.Controllers {
         //POST Bestelling
         [HttpPost]
         [Route("{KlantId}/Bestelling/")]
-        public ActionResult<KlantRESTOutputDTO> PostBestelling(int KlantId, [FromBody] BestellingRESTInputDTOPOST restdto) {
+        public ActionResult<KlantRESTOutputDTO> PostBestelling(int KlantId, [FromBody] BestellingRESTInputDTO restdto) {
             try {
-                Klant klant = _klantService.ToonKlant(restdto.KlantId);
                 if (KlantId != restdto.KlantId) {
                     return BadRequest("KlantId komt niet overeen de opgegeven Id");
                 }
                 if (!Enum.IsDefined(typeof(Product), restdto.Product))
                     return BadRequest("VoegBestellingToe - product is ongeldig");
                 else {
-                    Bestelling bestelling = _bestellingService.BestellingToevoegen(MapToDomain.MapToBestellingDomainPOST(restdto, klant));
+                    Klant klant = _klantService.ToonKlant(restdto.KlantId);
+                    Bestelling bestelling = _bestellingService.BestellingToevoegen(MapToDomain.MapToBestellingDomain(restdto, klant));
                     return CreatedAtAction(nameof(GetBestelling), new { KlantId = bestelling.Klant.KlantId, bestellingId = bestelling.BestellingId }, MapFromDomain.MapFromBestellingDomain(url, bestelling));
 
                 }
@@ -128,16 +128,21 @@ namespace API_KlantBestelling.Controllers {
         //PUT Bestelling
         [HttpPut]
         [Route("{KlantId}/Bestelling/{bestellingId}")]
-        public ActionResult<BestellingRESTOutputDTO> PutBestelling(int KlantId, int bestellingId, [FromBody] BestellingRESTInputDTOPUT bestellingRESTInputDTOPUT) {
+        public ActionResult<BestellingRESTOutputDTO> PutBestelling(int KlantId, int bestellingId, [FromBody] BestellingRESTInputDTO bestellingRESTInputDTO) {
             try {
-                if (!_bestellingService.BestaatBestelling(KlantId) || bestellingRESTInputDTOPUT == null) {
+                if (bestellingId != bestellingRESTInputDTO.BestellingId)
+                {
+                    return BadRequest("KlantId komt niet overeen met KlantId.");
+                }
+                if (KlantId != bestellingRESTInputDTO.KlantId)
+                {
+                    return BadRequest("KlantId komt niet overeen met KlantId.");
+                }
+                if (!_bestellingService.BestaatBestelling(bestellingId) || bestellingRESTInputDTO == null) {
                     return BadRequest();
                 }
                 Klant klant = _klantService.ToonKlant(KlantId);
-                if (klant.KlantId != bestellingRESTInputDTOPUT.KlantId) {
-                    return BadRequest("KlantId komt niet overeen met KlantId.");
-                }
-                Bestelling bestelling = MapToDomain.MapToBestellingDomainPUT(bestellingRESTInputDTOPUT, klant);
+                Bestelling bestelling = MapToDomain.MapToBestellingDomain(bestellingRESTInputDTO, klant);
                 bestelling.ZetId(bestellingId);
                 Bestelling bestellingDb = _bestellingService.UpdateBestelling(bestelling);
                 return CreatedAtAction(nameof(GetBestelling), new { KlantId = bestellingDb.Klant.KlantId, bestellingId = bestellingDb.BestellingId }, MapFromDomain.MapFromBestellingDomain(url, bestellingDb));

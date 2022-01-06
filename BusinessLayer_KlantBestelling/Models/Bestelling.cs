@@ -8,9 +8,6 @@ using System.Threading.Tasks;
 namespace BusinessLayer_KlantBestelling {
     public class Bestelling {
         public Bestelling(int bestellingId, Klant klant, int aantal, int product) :this(klant,aantal,product) {
-            ZetKlant(klant);
-            ZetAantal(aantal);
-            ZetProduct(product);
             ZetId(bestellingId);
         }
 
@@ -25,6 +22,22 @@ namespace BusinessLayer_KlantBestelling {
         public int Aantal { get; private set; }
         public Product Product { get; private set; }
 
+        public void ZetKlant(Klant newKlant)
+        {
+
+            if (newKlant == null) throw new BestellingException("Bestelling - invalid klant");
+            if (newKlant == Klant) throw new BestellingException("Bestelling - ZetKlant - not new");
+            if (Klant != null)
+                if (Klant.HeeftBestelling(this))
+                    Klant.VerwijderBestelling(this);
+            if (!newKlant.HeeftBestelling(this))
+                newKlant.VoegToeBestelling(this);
+            Klant = newKlant;
+        }
+        public void VerwijderKlant()
+        {
+            Klant = null;
+        }
         public void ZetId(int id)
         {
             if (id <= 0) throw new BestellingException("ID is 0 of lager");
@@ -41,12 +54,6 @@ namespace BusinessLayer_KlantBestelling {
                 throw new BestellingException("Het aantal moet steeds groter zijn dan 0.");
             }
             Aantal = aantal;
-        }
-        public void ZetKlant(Klant klant) {
-            if (klant == null) {
-                throw new BestellingException("Klant is NULL.");
-            }
-            Klant = klant;
         }
     }
 }

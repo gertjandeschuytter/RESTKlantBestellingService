@@ -10,15 +10,26 @@ namespace BusinessLayer_KlantBestelling.Services {
     public class KlantService {
 
         private IBestellingRepository _bestellingRepo;
-        private IKlantRepository _repo;
+        private IKlantRepository _klantRepo;
 
-        public KlantService(IKlantRepository repo, IBestellingRepository bestellingRepo) {
-            this._repo = repo;
+        public KlantService(IKlantRepository klantRepo, IBestellingRepository bestellingRepo) {
+            this._klantRepo = klantRepo;
             this._bestellingRepo = bestellingRepo;
         }
 
         public Klant ToonKlant(int klantId) {
-            return _repo.GeefKlant(klantId);
+            try
+            {
+                if (!bestaatKlant(klantId))
+                {
+                    throw new KlantServiceException("Klant bestaat niet");
+                }
+                return _klantRepo.GeefKlant(klantId);
+            }
+            catch (Exception ex)
+            {
+                throw new KlantServiceException("Klant kan niet getoond worden - " + ex.Message);
+            }
         }
 
         public Klant KlantToevoegen(Klant klant) {
@@ -26,35 +37,35 @@ namespace BusinessLayer_KlantBestelling.Services {
                 if (klant == null) {
                     throw new KlantServiceException("Klant is null.");
                 }
-                if (_repo.BestaatKlant(klant)) {
+                if (_klantRepo.BestaatKlant(klant)) {
                     throw new KlantServiceException("Klant bestaat al.");
                 }
-                return _repo.KlantToevoegen(klant);
+                return _klantRepo.KlantToevoegen(klant);
             } catch (Exception ex) {
-                throw new KlantServiceException("KlantToevoegen - " + ex.Message);
+                throw new KlantServiceException("Klant kan niet toegevoegd worden - " + ex.Message);
             }
 
         }
 
         public void VerwijderKlant(int klantId) {
             try {
-                if (!_repo.BestaatKlant(klantId)) {
+                if (!_klantRepo.BestaatKlant(klantId)) {
                     throw new KlantServiceException("Klant bestaat niet.");
                 }
                 if (_bestellingRepo.HeeftKlantBestellingen(klantId)) {
                     throw new KlantServiceException("Klant heeft nog bestellingen.");
                 }
             } catch (Exception ex) {
-                throw new KlantServiceException("Verwijder klant - " + ex.Message);
+                throw new KlantServiceException("Klant kan niet verwijderd worden - " + ex.Message);
             }
-            _repo.VerwijderKlant(klantId);
+            _klantRepo.VerwijderKlant(klantId);
         }
 
         public bool bestaatKlant(int klantId) {
             try {
-                return _repo.BestaatKlant(klantId);
+                return _klantRepo.BestaatKlant(klantId);
             } catch (Exception ex) {
-                throw new KlantServiceException("Klant bestaat niet", ex);
+                throw new KlantServiceException("Klant bestaat niet - "+ ex.Message);
             }
         }
 
@@ -63,17 +74,17 @@ namespace BusinessLayer_KlantBestelling.Services {
                 if (klant == null) {
                     throw new KlantServiceException("Klant is null.");
                 }
-                if (!_repo.BestaatKlant(klant.KlantId)) {
+                if (!_klantRepo.BestaatKlant(klant.KlantId)) {
                     throw new KlantServiceException("Klant bestaat niet.");
                 }
                 Klant klantDb = ToonKlant(klant.KlantId);
                 if (klantDb == klant) {
                     throw new KlantServiceException("Er zijn geen verschillen met het origineel.");
                 }
-                _repo.KlantUpdaten(klant);
+                _klantRepo.KlantUpdaten(klant);
                 return klant;
             } catch (Exception ex) {
-                throw new KlantServiceException("UpdateKlant - " + ex.Message);
+                throw new KlantServiceException("Klant kan niet geupdatet worden - " + ex.Message);
             }
         }
     }

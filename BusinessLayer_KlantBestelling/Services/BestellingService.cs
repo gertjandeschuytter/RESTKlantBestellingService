@@ -2,93 +2,132 @@
 using BusinessLayer_KlantBestelling.ServiceExceptions;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BusinessLayer_KlantBestelling.Services {
     public class BestellingService {
 
-        private readonly IBestellingRepository _repo;
+        private readonly IBestellingRepository _bestellingrepo;
         private readonly IKlantRepository _klantrepo;
 
-        public BestellingService(IBestellingRepository repo, IKlantRepository klantrepo) {
-            this._repo = repo;
+        public BestellingService(IBestellingRepository bestellingrepo, IKlantRepository klantrepo)
+        {
+            this._bestellingrepo = bestellingrepo;
             this._klantrepo = klantrepo;
         }
 
-        public IEnumerable<Bestelling> GeefBestellingenKlant(int klantId) {
-            try {
-                return _repo.GeefBestellingenKlant(klantId);
-            } catch (Exception ex) {
-                throw new BestellingServiceException("GeefBestellingenKlant - error", ex);
+        public IEnumerable<Bestelling> GeefBestellingenKlant(int klantId)
+        {
+            try
+            {
+                return _bestellingrepo.GeefBestellingenKlant(klantId);
+            }
+            catch (Exception ex)
+            {
+                throw new BestellingServiceException("Bestellingen van klant kunnen niet getoond worden - " + ex.Message);
             }
         }
 
-        public bool HeeftKlantBestellingen(int klantId) {
-            try {
-                return _repo.HeeftKlantBestellingen(klantId);
-            } catch (Exception ex) {
-                throw new BestellingServiceException("HeeftBestellingenKlant - Klant heeft nog bestellingen en kan niet verwijderd worden", ex);
+        public bool HeeftKlantBestellingen(int klantId)
+        {
+            try
+            {
+                return _bestellingrepo.HeeftKlantBestellingen(klantId);
+            }
+            catch (Exception ex)
+            {
+                throw new BestellingServiceException("Heeft klant bestellingen - er is iets foutgelopen" + ex.Message);
             }
         }
 
-        public Bestelling BestellingToevoegen(Bestelling b) {
-            try {
-                if (b == null) {
+        public Bestelling BestellingToevoegen(Bestelling bestelling)
+        {
+            try
+            {
+                if (bestelling == null)
+                {
                     throw new BestellingServiceException("Bestelling is null");
                 }
-                if (!_klantrepo.BestaatKlant(b.Klant.KlantId)) {
+                if (!_klantrepo.BestaatKlant(bestelling.Klant.KlantId))
+                {
                     throw new BestellingServiceException("klant bestaat nog niet dus er kunnen geen bestellingen worden aangemaakt");
                 }
-                _repo.BestellingToevoegen(b);
+                Bestelling b = _bestellingrepo.BestellingToevoegen(bestelling);
                 return b;
-                } catch (Exception ex) {
-                throw new BestellingServiceException("BestellingToevoegen" + ex);
+            }
+            catch (Exception ex)
+            {
+                throw new BestellingServiceException("Bestelling kan niet toegevoegd worden - " + ex.Message);
             }
         }
 
-        public Bestelling BestellingTonen(int bestellingId) {
-            try {
-                //hier moet nog een bestaat bestelling
-                return _repo.BestellingTonen(bestellingId);
-            } catch (Exception ex) {
-                throw new BestellingServiceException("BestellingWeergeven - bestelling bestaat niet", ex);
-            }
-        }
-
-        public void BestellingVerwijderen(int bestellingId) {
-            try {
-                if (!_repo.BestaatBestelling(bestellingId)) {
+        public Bestelling BestellingTonen(int bestellingId)
+        {
+            try
+            {
+                if (!BestaatBestelling(bestellingId))
+                {
                     throw new BestellingServiceException("Bestelling bestaat niet.");
                 }
-                _repo.VerwijderBestelling(bestellingId);
-            } catch (Exception ex) {
-                throw new BestellingServiceException("BestellingVerwijderen - " + ex.Message);
+                return _bestellingrepo.BestellingTonen(bestellingId);
+            }
+            catch (Exception ex)
+            {
+                throw new BestellingServiceException("Bestelling kan niet getoond worden - " + ex.Message);
             }
         }
 
-        public bool BestaatBestelling(int klantId) {
-            try {
-                return _repo.BestaatBestelling(klantId);
-            } catch (Exception ex) {
+        public void BestellingVerwijderen(int bestellingId)
+        {
+            try
+            {
+                if (!_bestellingrepo.BestaatBestelling(bestellingId))
+                {
+                    throw new BestellingServiceException("Bestelling bestaat niet.");
+                }
+                _bestellingrepo.VerwijderBestelling(bestellingId);
+            }
+            catch (Exception ex)
+            {
+                throw new BestellingServiceException("Bestelling kan niet verwijderd worden - " + ex.Message);
+            }
+        }
+
+        public bool BestaatBestelling(int bestellingId)
+        {
+            try
+            {
+                return _bestellingrepo.BestaatBestelling(bestellingId);
+            }
+            catch (Exception ex)
+            {
                 throw new BestellingServiceException("Bestelling bestaat niet - " + ex.Message);
             }
         }
 
-        public Bestelling UpdateBestelling(Bestelling bestelling) {
-            if (bestelling == null) {
-                throw new BestellingServiceException("Bestelling is null.");
+        public Bestelling UpdateBestelling(Bestelling bestelling)
+        {
+            try
+            {
+                if (bestelling == null)
+                {
+                    throw new BestellingServiceException("Bestelling is null.");
+                }
+                if (!_bestellingrepo.BestaatBestelling(bestelling.BestellingId))
+                {
+                    throw new BestellingServiceException("Bestelling bestaat niet.");
+                }
+                Bestelling bestellingDb = BestellingTonen(bestelling.BestellingId);
+                if (bestellingDb == bestelling)
+                {
+                    throw new BestellingServiceException("Er zijn geen verschillen met het origineel.");
+                }
+                _bestellingrepo.UpdateBestelling(bestelling);
+                return bestelling;
             }
-            if (!_repo.BestaatBestelling(bestelling.BestellingId)) {
-                throw new BestellingServiceException("Bestelling bestaat niet.");
+            catch (Exception ex)
+            {
+                throw new BestellingServiceException("Bestelling kan niet upgedatet worden - " + ex.Message);
             }
-            Bestelling bestellingDb = BestellingTonen(bestelling.BestellingId);
-            if (bestellingDb == bestelling) {
-                throw new BestellingServiceException("Er zijn geen verschillen met het origineel.");
-            }
-            _repo.UpdateBestelling(bestelling);
-            return bestelling;
         }
     }
 }
